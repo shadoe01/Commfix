@@ -133,6 +133,99 @@ treatment the resident side got on Day 5:
   demonstrate the error state on demand, not real error-handling logic;
   remove it once real API calls exist.
 
+## Day 9: Real authentication
+
+Login and Register now call the real backend instead of faking success.
+Copy `.env.example` to `.env` in this folder and point it at your running
+backend (defaults to `http://localhost:4000/api`, which matches the
+backend's default port).
+
+What changed:
+- `src/context/AuthContext.jsx` — holds the logged-in user + token,
+  persisted to `localStorage` so refreshing the page doesn't log you out.
+  See the comment there about the XSS tradeoff of localStorage vs. an
+  httpOnly cookie.
+- `src/components/ProtectedRoute.jsx` — wraps the resident and admin route
+  groups in `App.jsx`. Not logged in → bounced to `/login`. Logged in as
+  the wrong role (e.g. a resident hitting `/admin`) → bounced to `/`.
+- **The Day 6 Resident/Administrator login toggle is gone.** Role now
+  comes from the account itself (whatever's in the database), not a tab
+  you click — keeping the toggle would have let anyone claim to be an
+  admin.
+- **The temporary RoleSwitch top-bar toggle is gone too**, same reason —
+  both layouts now show your real initials instead.
+- Login/Register show a real "Logging in..." / "Creating account..."
+  disabled-button state while the request is in flight, and show whatever
+  error message the backend actually sends back (e.g. "Email is already
+  registered.") instead of the old fake client-only checks.
+- Logout (in both Profile pages) now actually clears the stored token and
+  redirects to `/login` — try accessing `/` or `/admin` afterward to
+  confirm `ProtectedRoute` kicks you back out.
+
+Registration only creates **resident** accounts, on purpose — see the
+backend README for how to create an admin account to test with.
+
+Report Damage, My Reports, Notifications, and the rest of the admin pages
+still use the mock data in `src/data/placeholder.js` — wiring those to the
+real (still-stub) backend routes is later work, not Day 9.
+
+## Day 11: Real damage reporting
+
+The Report Damage wizard now actually saves to the database. Run the
+database migration in the backend's README first, or this will fail with
+"Unknown facility" errors.
+
+What changed:
+- `ReviewStep.jsx`'s Submit Report button calls the real
+  `POST /api/reports` (via `services/api.js`'s `submitReport`), using your
+  logged-in token. On success it moves to the success screen with the
+  real report id from the database; on failure it shows the backend's
+  actual error message instead of always succeeding.
+- The fake "AI Analyzing..." step and its mock result are still there as a
+  prototype preview — **but that mock AI result is not sent to the
+  backend or saved anywhere.** Day 11 deliberately doesn't implement real
+  AI yet (that's a later phase), so Report Details now says "Not yet
+  analyzed" rather than showing the fake result as if it were real.
+- `MyReports.jsx`, the resident `Dashboard.jsx`, and `ReportDetails.jsx`
+  all now fetch real reports from the backend instead of
+  `data/placeholder.js` — loading and error states included. A resident
+  only ever sees their own reports; that's enforced on the backend, not
+  just hidden in the UI.
+- Image upload is still just a local preview (`URL.createObjectURL`) —
+  nothing is actually uploaded to the server. That's explicitly Day 12+
+  work per the plan.
+
+The admin-side Damage Reports page still uses mock data — wiring that up
+is separate work, not part of Day 11's resident-focused scope.
+
+## Day 12: Photos
+
+- **Wizard** (`PhotoStep.jsx`, `ReviewStep.jsx`): the chosen `File` is kept
+  (not just a preview URL). Submit is two-stage: create the report, then
+  upload the photo against its new id. If the report saves but the photo
+  doesn't, you still get the success screen with a warning — retrying the
+  whole submit would create a duplicate report — and can use **Add a photo**
+  on the report afterwards.
+- **Report Details** (`pages/resident/ReportDetails.jsx`): shows every photo,
+  "No photos attached." when none, **Remove photo N** buttons, and an **Add a
+  photo** input. Both controls disappear once the report is no longer
+  pending or has 5 photos (the backend enforces this too).
+- **My Reports**: each card shows report #, category, facility + location,
+  date, status, severity, and a thumbnail (the report's first photo).
+- **Photos are private.** `<img src>` can't send a login token, so
+  `components/AuthImage.jsx` fetches each photo through
+  `services/api.js → fetchReportImage()` with the token and displays a
+  temporary blob URL, freed on unmount.
+- `utils/imageRules.js` holds the type/size/count limits in one place.
+  Client checks are for speed; the backend re-checks everything.
+
+Photo is **required** in the wizard (there is no skip), which fits the later
+AI step that needs an image. The API itself allows reports without photos.
+
+Checked with a TypeScript syntax pass over all 49 source files plus
+import/export resolution — that proves the files parse and link, not that
+they behave correctly in a browser. Please click through it.
+
 ## Installable app (PWA)
 
 Commfix is set up so it can be "installed" from the browser to a home screen

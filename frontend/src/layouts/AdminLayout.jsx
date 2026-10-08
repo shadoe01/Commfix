@@ -3,7 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "../components/Sidebar.jsx";
 import Topbar from "../components/Topbar.jsx";
 import AdminBottomNav from "../components/AdminBottomNav.jsx";
-import RoleSwitch from "./RoleSwitch.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 
 const NAV_ITEMS = [
   { to: "/admin", label: "Dashboard", end: true },
@@ -25,9 +25,14 @@ const TITLES = {
   "/admin/profile": "Profile",
 };
 
+function initials(name = "") {
+  return name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase() || "?";
+}
+
 export default function AdminLayout() {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
+  const { user } = useAuth();
   let title = TITLES[pathname];
   if (!title) {
     if (pathname.includes("/ai")) title = "AI Assessment";
@@ -44,8 +49,7 @@ export default function AdminLayout() {
           title={title}
           onMenuClick={() => setOpen((v) => !v)}
           notifTo="/admin/notifications"
-          avatarLabel="AC"
-          roleSwitch={<RoleSwitch />}
+          avatarLabel={initials(user?.name)}
         />
         <div className="app-content">
           <Outlet />

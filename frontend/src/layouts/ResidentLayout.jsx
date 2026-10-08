@@ -3,7 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "../components/Sidebar.jsx";
 import Topbar from "../components/Topbar.jsx";
 import BottomNav from "../components/BottomNav.jsx";
-import RoleSwitch from "./RoleSwitch.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 
 const NAV_ITEMS = [
   { to: "/", label: "Dashboard", end: true },
@@ -23,9 +23,14 @@ const TITLES = {
   "/notifications": "Notifications",
 };
 
+function initials(name = "") {
+  return name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase() || "?";
+}
+
 export default function ResidentLayout() {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
+  const { user } = useAuth();
   const title = pathname.startsWith("/my-reports/") ? "Report Details" : TITLES[pathname] || "Commfix";
 
   return (
@@ -36,8 +41,7 @@ export default function ResidentLayout() {
           title={title}
           onMenuClick={() => setOpen((v) => !v)}
           notifTo="/notifications"
-          avatarLabel="JD"
-          roleSwitch={<RoleSwitch />}
+          avatarLabel={initials(user?.name)}
         />
         <div className="app-content">
           <Outlet />

@@ -433,3 +433,32 @@ table.list tr.clickable:hover { background: var(--color-bg); }
 .error-state h3 { color: var(--color-danger); }
 
 .quick-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* ---------- Day 12: photos ---------- */
+
+.photo-fallback {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  padding: var(--space-3);
+  text-align: center;
+}
+
+.report-card-row { display: flex; gap: var(--space-3); align-items: flex-start; }
+.report-card-body { flex: 1; min-width: 0; }
+
+.report-thumb {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.report-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.report-thumb .photo-fallback { padding: 0; font-size: var(--text-xs); }
+
+.photo-actions { display: flex; gap: var(--space-3); margin-bottom: var(--space-4); }

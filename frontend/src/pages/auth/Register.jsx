@@ -1,28 +1,33 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Button from "../../components/Button.jsx";
-import { users } from "../../data/placeholder.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 const EMPTY = { name: "", email: "", contact: "", address: "", password: "", confirm: "" };
 
 export default function Register() {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [form, setForm] = useState(EMPTY);
   const [errors, setErrors] = useState({});
+  const [formError, setFormError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
+  // Client-side validation is a first line of defense for UX (instant
+  // feedback) -- the backend validates everything again for real, including
+  // the duplicate-email check, since client-side checks can always be
+  // bypassed.
   function validate() {
     const e = {};
     if (!form.name.trim()) e.name = "Full name is required.";
     if (!form.email) e.email = "Email is required.";
     else if (!EMAIL_RE.test(form.email)) e.email = "Enter a valid email address.";
-    else if (users.some((u) => u.email.toLowerCase() === form.email.toLowerCase())) e.email = "An account with this email already exists.";
     if (!form.contact.trim()) e.contact = "Contact number is required.";
     if (!form.address.trim()) e.address = "Address is required.";
     if (!form.password) e.password = "Password is required.";
@@ -31,17 +36,36 @@ export default function Register() {
     return e;
   }
 
-  function handleSubmit(ev) {
+  async function handleSubmit(ev) {
     ev.preventDefault();
     const e = validate();
     setErrors(e);
-    if (Object.keys(e).length === 0) navigate("/");
+    setFormError("");
+    if (Object.keys(e).length > 0) return;
+
+    setSubmitting(true);
+    try {
+      await register({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        confirmPassword: form.confirm,
+        contact: form.contact,
+        address: form.address,
+      });
+      navigate("/login");
+    } catch (err) {
+      setFormError(err.message || "Registration failed. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
     <>
       <h2>Create your account</h2>
       <p>Sign up to report infrastructure problems in your community.</p>
+      {formError && <div className="form-banner-error">{formError}</div>}
       <form onSubmit={handleSubmit} noValidate>
         <div className={`field${errors.name ? " has-error" : ""}`}>
           <label htmlFor="name">Full name</label>
@@ -78,7 +102,9 @@ export default function Register() {
           <input id="confirm" type={showPassword ? "text" : "password"} placeholder="••••••••" value={form.confirm} onChange={(e) => update("confirm", e.target.value)} />
           {errors.confirm && <div className="field-error">{errors.confirm}</div>}
         </div>
-        <Button type="submit" block>Create account</Button>
+        <Button type="submit" block disabled={submitting}>
+          {submitting ? "Creating account..." : "Create account"}
+        </Button>
       </form>
       <p className="auth-foot">
         Already have an account? <Link to="/login">Log in</Link>

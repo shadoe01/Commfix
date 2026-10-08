@@ -13,7 +13,7 @@ import SuccessStep from "./report-flow/SuccessStep.jsx";
 // be ten completely separate pages.
 const STEPS = ["details", "photo", "analyzing", "result", "review", "success"];
 
-const EMPTY_REPORT = { facility: "", category: "", location: "", description: "", photo: null, ai: null };
+const EMPTY_REPORT = { facility: "", category: "", location: "", description: "", photo: null, photoFile: null, ai: null };
 
 export default function ReportDamage() {
   const [stepIndex, setStepIndex] = useState(0);
@@ -29,8 +29,8 @@ export default function ReportDamage() {
     goTo(1);
   }
 
-  function handlePhotoNext(photo) {
-    setReport((r) => ({ ...r, photo }));
+  function handlePhotoNext(photoFile, photo) {
+    setReport((r) => ({ ...r, photo, photoFile }));
     goTo(2);
   }
 
@@ -43,7 +43,8 @@ export default function ReportDamage() {
     goTo(4);
   }
 
-  function handleSubmitted() {
+  function handleSubmitted(reportId, photoFailed) {
+    setReport((r) => ({ ...r, id: reportId, photoFailed }));
     goTo(5);
   }
 
@@ -72,11 +73,11 @@ export default function ReportDamage() {
 
       <div style={{ maxWidth: 480 }}>
         {step === "details" && <DetailsStep data={report} onNext={handleDetailsNext} />}
-        {step === "photo" && <PhotoStep photo={report.photo} onNext={handlePhotoNext} onBack={() => goTo(0)} />}
+        {step === "photo" && <PhotoStep photo={report.photo} photoFile={report.photoFile} onNext={handlePhotoNext} onBack={() => goTo(0)} />}
         {step === "analyzing" && <AIProcessingStep onDone={handleAIDone} />}
         {step === "result" && <AIResultStep onNext={handleAIResultNext} />}
         {step === "review" && <ReviewStep report={report} onEdit={() => goTo(0)} onSubmit={handleSubmitted} />}
-        {step === "success" && <SuccessStep reportId="0999" />}
+        {step === "success" && <SuccessStep reportId={report.id} photoFailed={report.photoFailed} />}
       </div>
     </>
   );

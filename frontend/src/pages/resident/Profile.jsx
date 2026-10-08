@@ -1,13 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import Button from "../../components/Button.jsx";
-import { currentResident } from "../../data/placeholder.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 
-function initials(name) {
-  return name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
+function initials(name = "") {
+  return name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase() || "?";
 }
 
 export default function Profile() {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   return (
     <>
@@ -27,34 +28,34 @@ export default function Profile() {
             fontSize: "var(--text-xl)", fontWeight: 700, margin: "0 auto 12px",
           }}
         >
-          {initials(currentResident.name)}
+          {initials(user?.name)}
         </div>
-        <h2 style={{ margin: 0 }}>{currentResident.name}</h2>
+        <h2 style={{ margin: 0 }}>{user?.name}</h2>
       </div>
 
       <div className="card" style={{ maxWidth: 480 }}>
         <div className="field">
           <label>Full name</label>
-          <input defaultValue={currentResident.name} />
+          <input defaultValue={user?.name} />
         </div>
         <div className="field">
           <label>Email</label>
-          <input defaultValue={currentResident.email} />
+          <input defaultValue={user?.email} />
         </div>
         <div className="field">
           <label>Contact number</label>
-          <input defaultValue={currentResident.contact} />
+          <input placeholder="Not loaded yet -- GET /api/residents/:id is still a Day 7/8 stub" />
         </div>
         <div className="field">
           <label>Address</label>
-          <input defaultValue={currentResident.address} />
+          <input placeholder="Not loaded yet -- GET /api/residents/:id is still a Day 7/8 stub" />
         </div>
         <Button>Save changes</Button>
       </div>
 
       <div className="card" style={{ maxWidth: 480, display: "flex", flexDirection: "column", gap: 12 }}>
         <Button variant="secondary">Change Password</Button>
-        <Button variant="secondary" onClick={() => navigate("/login")}>Logout</Button>
+        <Button variant="secondary" onClick={() => { logout(); navigate("/login"); }}>Logout</Button>
       </div>
     </>
   );

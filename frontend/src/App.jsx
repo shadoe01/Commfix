@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import AuthLayout from "./layouts/AuthLayout.jsx";
 import ResidentLayout from "./layouts/ResidentLayout.jsx";
 import AdminLayout from "./layouts/AdminLayout.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 import Login from "./pages/auth/Login.jsx";
 import Register from "./pages/auth/Register.jsx";
@@ -35,29 +36,33 @@ export default function App() {
         <Route path="/register" element={<Register />} />
       </Route>
 
-      {/* Resident */}
-      <Route element={<ResidentLayout />}>
-        <Route path="/" element={<ResidentDashboard />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/residence" element={<Residence />} />
-        <Route path="/report-damage" element={<ReportDamage />} />
-        <Route path="/my-reports" element={<MyReports />} />
-        <Route path="/my-reports/:id" element={<ReportDetails />} />
-        <Route path="/notifications" element={<ResidentNotifications />} />
+      {/* Resident -- requires login, and specifically the "resident" role */}
+      <Route element={<ProtectedRoute role="resident" />}>
+        <Route element={<ResidentLayout />}>
+          <Route path="/" element={<ResidentDashboard />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/residence" element={<Residence />} />
+          <Route path="/report-damage" element={<ReportDamage />} />
+          <Route path="/my-reports" element={<MyReports />} />
+          <Route path="/my-reports/:id" element={<ReportDetails />} />
+          <Route path="/notifications" element={<ResidentNotifications />} />
+        </Route>
       </Route>
 
-      {/* Admin */}
-      <Route element={<AdminLayout />}>
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/reports" element={<DamageReports />} />
-        <Route path="/admin/reports/:id" element={<AdminReportDetails />} />
-        <Route path="/admin/reports/:id/ai" element={<AIAssessment />} />
-        <Route path="/admin/residents" element={<ResidentRecords />} />
-        <Route path="/admin/residents/:id" element={<ResidentDetails />} />
-        <Route path="/admin/facilities" element={<FacilityManagement />} />
-        <Route path="/admin/users" element={<UserManagement />} />
-        <Route path="/admin/notifications" element={<AdminNotifications />} />
-        <Route path="/admin/profile" element={<AdminProfile />} />
+      {/* Admin -- requires login, and specifically the "admin" role */}
+      <Route element={<ProtectedRoute role="admin" />}>
+        <Route element={<AdminLayout />}>
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/reports" element={<DamageReports />} />
+          <Route path="/admin/reports/:id" element={<AdminReportDetails />} />
+          <Route path="/admin/reports/:id/ai" element={<AIAssessment />} />
+          <Route path="/admin/residents" element={<ResidentRecords />} />
+          <Route path="/admin/residents/:id" element={<ResidentDetails />} />
+          <Route path="/admin/facilities" element={<FacilityManagement />} />
+          <Route path="/admin/users" element={<UserManagement />} />
+          <Route path="/admin/notifications" element={<AdminNotifications />} />
+          <Route path="/admin/profile" element={<AdminProfile />} />
+        </Route>
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

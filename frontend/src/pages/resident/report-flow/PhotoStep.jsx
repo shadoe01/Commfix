@@ -1,36 +1,38 @@
 import { useRef, useState } from "react";
 import Button from "../../../components/Button.jsx";
+import { ALLOWED_IMAGE_TYPES, validateImageFile } from "../../../utils/imageRules.js";
 
 /**
  * Combines "Image Capture/Upload" and "Photo Preview" from the Day 5 plan
- * into one step: pick a file, see a preview, Retake clears it, Use Photo
- * moves on. There's no real camera access here -- <input type="file"
- * accept="image/*" capture="environment"> opens the camera app on a phone
- * and a file picker on desktop, which is as close as a browser gets without
- * native code.
+ * into one step. Day 12 change: this now hands the real File object up
+ * to the parent (via onNext(file, previewUrl)), not just a preview
+ * string -- the actual upload happens later, in ReviewStep, once the
+ * report has been created and has a real id to attach the photo to.
  */
-export default function PhotoStep({ photo, onNext, onBack }) {
+export default function PhotoStep({ photo, photoFile, onNext, onBack }) {
   const [preview, setPreview] = useState(photo);
+  const [file, setFile] = useState(photoFile || null);
   const [error, setError] = useState("");
   const inputRef = useRef(null);
 
   function handleFile(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setError("Please choose an image file (JPG or PNG).");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Image is larger than 5 MB. Choose a smaller photo.");
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+    // Same rules the backend enforces again (utils/imageRules.js) -- this
+    // is just the faster, friendlier first line of defense.
+    const problem = validateImageFile(selected);
+    if (problem) {
+      setError(problem);
       return;
     }
     setError("");
-    setPreview(URL.createObjectURL(file));
+    setFile(selected);
+    setPreview(URL.createObjectURL(selected));
   }
 
   function retake() {
     setPreview(null);
+    setFile(null);
     setError("");
     if (inputRef.current) inputRef.current.value = "";
   }
@@ -44,19 +46,19 @@ export default function PhotoStep({ photo, onNext, onBack }) {
           </div>
           <div style={{ display: "flex", gap: 12 }}>
             <Button variant="secondary" block onClick={retake}>Retake</Button>
-            <Button block onClick={() => onNext(preview)}>Use Photo</Button>
+            <Button block onClick={() => onNext(file, preview)}>Use Photo</Button>
           </div>
         </>
       ) : (
         <>
           <div className="file-drop" style={{ marginBottom: 16 }}>
             📷 Add a photo of the damage
-            <div className="field-hint">JPG or PNG, up to 5 MB</div>
+            <div className="field-hint">JPEG, PNG, or WebP, up to 5 MB</div>
           </div>
           <input
             ref={inputRef}
             type="file"
-            accept="image/*"
+            accept={ALLOWED_IMAGE_TYPES.join(",")}
             capture="environment"
             onChange={handleFile}
             style={{ marginBottom: 16 }}

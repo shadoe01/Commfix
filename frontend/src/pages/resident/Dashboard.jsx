@@ -1,21 +1,37 @@
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import StatCard from "../../components/StatCard.jsx";
 import StatusBadge from "../../components/StatusBadge.jsx";
 import EmptyState from "../../components/EmptyState.jsx";
-import { reports, currentResident } from "../../data/placeholder.js";
+import LoadingState from "../../components/LoadingState.jsx";
+import ErrorState from "../../components/ErrorState.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
+import { getReports } from "../../services/api.js";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const mine = reports.filter((r) => r.resident === currentResident.name);
-  const pending = mine.filter((r) => r.status === "pending").length;
-  const underReview = mine.filter((r) => r.status === "under_review").length;
-  const resolved = mine.filter((r) => r.status === "resolved").length;
+  const { user, token } = useAuth();
+  const [reports, setReports] = useState(null);
+  const [error, setError] = useState(false);
+
+  function load() {
+    setError(false);
+    setReports(null);
+    getReports(token)
+      .then(setReports)
+      .catch(() => setError(true));
+  }
+  useEffect(load, [token]);
+
+  const pending = reports?.filter((r) => r.status === "pending").length ?? 0;
+  const underReview = reports?.filter((r) => r.status === "under_review").length ?? 0;
+  const resolved = reports?.filter((r) => r.status === "resolved").length ?? 0;
 
   return (
     <>
       <div className="page-header">
         <div>
-          <h1>Hello, {currentResident.name.split(" ")[0]}!</h1>
+          <h1>Hello, {user?.name?.split(" ")[0]}!</h1>
           <p>Report community problems easily.</p>
         </div>
       </div>
@@ -31,21 +47,25 @@ export default function Dashboard() {
       </div>
 
       <h3>Recent Reports</h3>
-      {mine.length === 0 ? (
+      {error ? (
+        <ErrorState onRetry={load} />
+      ) : reports === null ? (
+        <LoadingState title="Loading your reports..." />
+      ) : reports.length === 0 ? (
         <EmptyState title="You haven't submitted any reports yet" hint="Tap Report Damage to get started." />
       ) : (
-        mine.map((r) => (
+        reports.map((r) => (
           <button
-            key={r.id}
+            key={r.report_id}
             className="report-card"
             style={{ width: "100%", textAlign: "left", border: "1px solid var(--color-border)", cursor: "pointer" }}
-            onClick={() => navigate(`/my-reports/${r.id}`)}
+            onClick={() => navigate(`/my-reports/${r.report_id}`)}
           >
             <div className="report-card-top">
-              <h3>{r.facility}</h3>
+              <h3>{r.facility_name}</h3>
               <StatusBadge status={r.status} />
             </div>
-            <p className="report-card-meta">{r.date}</p>
+            <p className="report-card-meta">{new Date(r.created_at).toLocaleDateString()}</p>
           </button>
         ))
       )}

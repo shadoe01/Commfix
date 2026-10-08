@@ -1,0 +1,7 @@
+node_modules/
+.env
+
+# Uploaded report photos are user content, not source code -- don't commit
+# them. The folder itself stays tracked via uploads/.gitkeep.
+uploads/*
+!uploads/.gitkeep
